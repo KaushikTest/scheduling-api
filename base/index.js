@@ -1,5 +1,6 @@
 import express from 'express';
-import router from './routes/events.js';
+import router from '../routes/events.js';
+import profileRouter from '../routes/profiles.js'
 
 const app = express();
 export const PORT = 3000;
@@ -11,6 +12,8 @@ app.get('/', (req, res) => {
 });
 
 app.use('/events', router);
+
+app.use('/profiles', profileRouter);
 
 if (process.env.NODE_ENV !== 'test') {
     const PORT = process.env.PORT || 3000;
