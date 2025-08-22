@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import request from 'supertest';
-import { TIME_FORMAT } from "./constants.js";
-import app from './index.js';
+import { TIME_FORMAT } from "../constants.js";
+import app from '../base/index.js';
 
 export async function bookEvent() {
 
