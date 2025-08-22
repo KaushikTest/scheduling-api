@@ -1,8 +1,10 @@
 class Event {
-    constructor(id, title, startTime, endTime, status) {
+    constructor(id, account_id, title, startTime, endTime, type, status) {
         this.id = id;
+        this.account_id = account_id;
         this.title = title;
         this.startTime = startTime;
+        this.type = type;
         this.endTime = endTime;
     }
 }
@@ -14,7 +16,12 @@ class EventBuilder {
     }
     setId(id) {
         this.id = id;
-        return id;
+        return this;
+    }
+
+    setAccount(account_id) {
+        this.account_id = account_id;
+        return this
     }
     setTitle(title) {
         this.title = title;
@@ -31,12 +38,19 @@ class EventBuilder {
         return this;
     }
 
+    setType(type) {
+        this.type = type;
+        return this;
+    }
+
     setStatus(status) {
         this.status = status;
         return this;
     }
 
     build() {
-        return new Event(this.id, this.title, this.startTime, this.endTime, this.status)
+        return new Event(this.id, this.account_id, this.title, this.startTime, this.endTime, this.type, this.status)
     }
 }
+
+export { EventBuilder };
