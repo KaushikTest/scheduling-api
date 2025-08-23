@@ -1,8 +1,8 @@
 class Profile {
-    constructor(id, company_name, time_zone, location, email, phone, created_at, updated_at) {
+    constructor(id, company_name, timezone, location, email, phone, created_at, updated_at) {
         this.id = id;
         this.company_name = company_name;
-        this.time_zone = time_zone;
+        this.timezone = timezone;
         this.location = location;
         this.email = email;
         this.phone = phone;
