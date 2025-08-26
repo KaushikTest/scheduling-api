@@ -1,7 +1,7 @@
 import express, { json } from 'express';
 import db from '../base/database.js';
 import { DateTime } from 'luxon';
-import { MISSING_FIELD, INVALID_DATE, TIME_ERROR, OVERLAP_ERROR, EVENT_BOOKED, ID_ERROR, EVENT_ERROR, EVENT_BLOCKED, EVENT_RELEASED, EVENT_UPDATED, EVENT_DELETED } from '../constants.js';
+import { MISSING_FIELD, INVALID_DATE, TIME_ERROR, OVERLAP_ERROR, EVENT_BOOKED, ID_ERROR, EVENT_ERROR, EVENT_BLOCKED, EVENT_RELEASED, EVENT_UPDATED, EVENT_DELETED } from '../commons/constants.js';
 
 const router = express.Router();
 
