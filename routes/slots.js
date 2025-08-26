@@ -1,7 +1,7 @@
 import express, { json } from 'express';
 import db from '../base/database.js';
 import { DateTime } from 'luxon';
-import { TIME_FORMAT } from '../constants.js';
+import { TIME_FORMAT } from '../commons/constants.js';
 import { generateSlots, isOverlapping } from '../commons/helper.js';
 
 const slotsRouter = express.Router();
