@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import request from 'supertest';
-import { TIME_FORMAT } from "../constants.js";
+import { TIME_FORMAT } from "./constants.js";
 import app from '../base/index.js';
 import { ProfileBuilder } from "../builders/profile-builder.js";
 import { Faker, en_IN, ta_IN, fakerEN_IN } from '@faker-js/faker';
@@ -92,7 +92,7 @@ export async function createProfile() {
     let request_body = createProfileRequest();
     let res = await request(app).post(`/profiles/create`)
         .send(request_body);
-    return res;
+    return { request_body, res };
 }
 
 export async function fetchHours(account_id) {
