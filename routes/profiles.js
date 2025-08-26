@@ -1,6 +1,7 @@
 import express, { json } from 'express';
 import db from '../base/database.js';
 import { DateTime } from 'luxon';
+import { PROFILE_CREATED, PROFILE_FETCHED } from '../commons/constants.js';
 
 const profileRouter = express.Router();
 
@@ -28,14 +29,14 @@ profileRouter.post('/create', (req, res) => {
     const profile = db.prepare(`SELECT * FROM profiles
         WHERE id=?`).get(id);
 
-    return res.status(201).json({ message: 'PROFILE_CREATED', profile });
+    return res.status(201).json({ message: PROFILE_CREATED, profile });
 
 });
 
 profileRouter.get('/:id', (req, res) => {
     const { id } = req.params;
     const profile = db.prepare(`SELECT * FROM profiles WHERE id=?`).get(id);
-    return res.status(200).json({ message: 'PROFILE_FETCHED', profile });
+    return res.status(200).json({ message: PROFILE_FETCHED, profile });
 });
 
 profileRouter.put('/:id', (req, res) => {
