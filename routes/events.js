@@ -26,6 +26,13 @@ router.get('/', (req, res) => {
     res.json({ date, events });
 });
 
+router.get('/:id', (req, res) => {
+    const { id } = req.params;
+    const query = `SELECT * FROM events WHERE id=?`;
+    const event = db.prepare(query).get(id);
+    res.json({ message: 'Event Fetched successfully', event })
+})
+
 router.post('/book', (req, res) => {
     const { account_id, title, startTime, endTime } = req.body;
     if (!account_id || !title || !startTime || !endTime) {
@@ -136,8 +143,8 @@ router.put('/:id', (req, res) => {
         return res.status(409).json({ message: OVERLAP_ERROR });
     }
 
-    db.prepare(`UPDATE events SET title=?, startTime=?, endTime=?
-        WHERE id=?`).run(title, startUTC, endUTC, id);
+    db.prepare(`UPDATE events SET title=?, startTime=?, endTime=?, status=?
+        WHERE id=?`).run(title, startUTC, endUTC, 'updated', id);
 
     const updated = db.prepare(`SELECT * FROM events WHERE id=?`).get(id);
     res.json({ message: EVENT_UPDATED, event: updated });
