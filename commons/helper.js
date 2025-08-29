@@ -1,37 +1,26 @@
 import { DateTime } from "luxon";
 import request from 'supertest';
-import { TIME_FORMAT } from "./constants.js";
+import { TIME_FORMAT, TIME_ZONE } from "./constants.js";
 import app from '../base/index.js';
 import { ProfileBuilder } from "../builders/profile-builder.js";
-import { Faker, en_IN, ta_IN, fakerEN_IN } from '@faker-js/faker';
+import { Faker, en_IN, ta_IN, fakerEN_IN, fakerEN } from '@faker-js/faker';
+import { EventBuilder } from "../builders/event-builder.js";
 
 const faker = new Faker({ locale: [en_IN, ta_IN] });
 
-export async function bookEvent() {
-
-    let currentTime = DateTime.now().setZone('Asia/Kolkata');
-    let startTime = currentTime.toFormat(TIME_FORMAT);
-    let endTime = currentTime.plus({ hour: 1 }).toFormat(TIME_FORMAT);
-    let res = await request(app)
+export async function bookEvent(account_id) {
+    let request_body = createEventRequest(account_id);
+    let response = await request(app)
         .post('/events/book')
-        .send({
-            title: "Meeting 1",
-            startTime: startTime,
-            endTime: endTime
-        });
-    return res;
-
+        .send(request_body);
+    return { request_body, response };
 }
 
-export async function bookEventByTime(start, end) {
-
+export async function bookEventByTime(start, end, account_id) {
+    let request_body = createEventRequestByTime(start, end, account_id);
     let res = await request(app)
         .post('/events/book')
-        .send({
-            title: "Meeting 1",
-            startTime: start,
-            endTime: end
-        });
+        .send(request_body);
     return res;
 }
 
@@ -40,25 +29,25 @@ export async function getEvents() {
     return res;
 }
 
-export async function UpdateEvent(id) {
-
-    let currentTime = DateTime.now().setZone('Asia/Kolkata');
-    let startTime = currentTime.toFormat(TIME_FORMAT);
-    let endTime = currentTime.plus({ hour: 1 }).toFormat(TIME_FORMAT);
+export async function UpdateEvent(id, account_id) {
+    let request_body = updateEventRequest(id, account_id);
     let res = await request(app)
         .put(`/events/${id}`)
-        .send({
-            title: 'Updated Title',
-            startTime: startTime,
-            endTime: endTime
-        });
+        .send(request_body);
+    return res;
+}
+
+export async function UpdateEventByStartEnd(start, end, id, account_id) {
+    let request_body = updateEventRequestByTime(start, end, id, account_id);
+    let res = await request(app)
+        .put(`/events/${id}`)
+        .send(request_body);
     return res;
 }
 
 export async function DeleteEvent(id) {
     let res = await request(app).delete(`/events/${id}`);
     return res;
-
 }
 
 export function generateSlots(start, end, slotSizeMinutes) {
@@ -82,7 +71,6 @@ export function isOverlapping(slot, unavailableIntervals) {
     );
 }
 
-
 export async function fetchProfile(id) {
     let res = await request(app).get(`/profiles/${id}`);
     return res;
@@ -100,7 +88,42 @@ export async function fetchHours(account_id) {
     return res;
 }
 
-
 function createProfileRequest() {
-    return new ProfileBuilder().setCompanyName(fakerEN_IN.company.name()).setTimezone(fakerEN_IN.location.timeZone()).setLocation(fakerEN_IN.location.streetAddress()).setEmail(fakerEN_IN.internet.email()).setPhone(fakerEN_IN.phone.number()).build();
+    return new ProfileBuilder().setCompanyName(fakerEN_IN.company.name())
+        .setTimezone(fakerEN_IN.location.timeZone()).setLocation(fakerEN_IN.location.streetAddress())
+        .setEmail(fakerEN_IN.internet.email()).setPhone(fakerEN_IN.phone.number()).build();
+}
+
+function createEventRequest(account_id) {
+    let currentTime = DateTime.now().setZone(TIME_ZONE);
+    let startTime = currentTime.toFormat(TIME_FORMAT);
+    let endTime = currentTime.plus({ hour: 1 }).toFormat(TIME_FORMAT);
+    return new EventBuilder().setAccount(account_id).setTitle(fakerEN.word.words(3)).setStartTime(startTime).setEndTime(endTime).build();
+}
+
+function createEventRequestByTime(start, end, account_id) {
+    return new EventBuilder().setAccount(account_id).setTitle(fakerEN.word.words(3)).setStartTime(start).setEndTime(end).build();
+}
+
+function updateEventRequest(id, account_id) {
+    let currentTime = DateTime.now().setZone(TIME_ZONE);
+    let startTime = currentTime.toFormat(TIME_FORMAT);
+    return new EventBuilder().setId(id).setAccount(account_id).setTitle(fakerEN.word.words(3)).setStartTime(startTime).setEndTime(endTime).build();
+}
+
+function updateEventRequestByTime(start, end, id, account_id) {
+    return new EventBuilder().setId(id).setAccount(account_id).setTitle(fakerEN.word.words(3)).setStartTime(start).setEndTime(end).build();
+}
+
+export function convertToUTC(time) {
+    return DateTime.fromISO(time, { zone: 'utc' }).toISO({ suppressMilliseconds: true });
+}
+
+export function UTCToLocal(time, timezone) {
+    return DateTime.fromISO(time, { zone: timezone }).toFormat(TIME_FORMAT);
+}
+
+export async function fetchEventById(id) {
+    let response = await request(app).get(`/events/${id}`);
+    return response;
 }
