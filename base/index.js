@@ -1,8 +1,9 @@
 import express from 'express';
+import hoursRouter from '../routes/business_hours.js';
 import router from '../routes/events.js';
 import profileRouter from '../routes/profiles.js';
-import hoursRouter from '../routes/business_hours.js';
 import slotsRouter from '../routes/slots.js';
+import trackRouter from '../routes/tracker.js';
 
 const app = express();
 export const PORT = 3000;
@@ -20,6 +21,8 @@ app.use('/profiles', profileRouter);
 app.use('/hours', hoursRouter);
 
 app.use('/slots', slotsRouter);
+
+app.use('/track', trackRouter);
 
 if (process.env.NODE_ENV !== 'test') {
     const PORT = process.env.PORT || 3000;
