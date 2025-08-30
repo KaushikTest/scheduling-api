@@ -60,7 +60,21 @@ router.post('/book', (req, res) => {
     const insert = db.prepare(`INSERT INTO events(id,account_id,title, startTime, endTime,type, status) VALUES(?,?,?,?,?,?,?)`);
 
     insert.run(id, account_id, title, startUTC, endUTC, 'EVENT', 'booked');
+    const log_id = crypto.randomUUID();
+    const logEventAudit = db.prepare(`
+        INSERT INTO event_audit (id,event_id,account_id,action,timestamp,type,details,performed_by) VALUES (?,?,?,?,?,?,?,?)`);
+
     const event = db.prepare(`SELECT * FROM events WHERE id =? `).get(id);
+    const details = {
+        old: {},
+        new: {
+            title: event.title,
+            startTime: event.startTime,
+            endTime: event.endTime
+        }
+    }
+    logEventAudit.run(log_id, id, account_id, 'created', new Date().toISOString(), 'EVENT', JSON.stringify(details), 'system'
+    );
 
     return res.status(201).json({ message: EVENT_BOOKED, event });
 });
