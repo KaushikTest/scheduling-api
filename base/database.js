@@ -40,7 +40,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS profiles(id TEXT PRIMARY KEY,
   updated_at TEXT DEFAULT (DATETIME('now')))`
 ).run();
 
-db.prepare(`CREATE TABLE event_audit(id TEXT PRIMARY KEY,
+db.prepare(`CREATE TABLE IF NOT EXISTS event_audit(id TEXT PRIMARY KEY,
   event_id TEXT NOT NULL,
   account_id TEXT,
   action TEXT NOT NULL,
