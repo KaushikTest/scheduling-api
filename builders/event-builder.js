@@ -4,8 +4,9 @@ class Event {
         this.account_id = account_id;
         this.title = title;
         this.startTime = startTime;
-        this.type = type;
         this.endTime = endTime;
+        this.type = type;
+        this.status = status;
     }
 }
 
