@@ -18,10 +18,10 @@ export async function bookEvent(account_id) {
 
 export async function bookEventByTime(start, end, account_id) {
     let request_body = createEventRequestByTime(start, end, account_id);
-    let res = await request(app)
+    let response = await request(app)
         .post('/events/book')
         .send(request_body);
-    return res;
+    return { request_body, response };
 }
 
 export async function getEvents() {
@@ -31,18 +31,18 @@ export async function getEvents() {
 
 export async function UpdateEvent(id, account_id) {
     let request_body = updateEventRequest(id, account_id);
-    let res = await request(app)
+    let response = await request(app)
         .put(`/events/${id}`)
         .send(request_body);
-    return res;
+    return { request_body, response };
 }
 
 export async function UpdateEventByStartEnd(start, end, id, account_id) {
     let request_body = updateEventRequestByTime(start, end, id, account_id);
-    let res = await request(app)
+    let response = await request(app)
         .put(`/events/${id}`)
         .send(request_body);
-    return res;
+    return { request_body, response };
 }
 
 export async function DeleteEvent(id) {
