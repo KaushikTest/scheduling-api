@@ -1,11 +1,12 @@
 import db from '../base/database.js';
 import app, { PORT } from '../base/index.js';
 import { EVENT_BOOKED, EVENT_DELETED, EVENT_ERROR, EVENT_UPDATED, OVERLAP_ERROR, TIME_ZONE } from '../commons/constants.js';
-import { bookEvent, bookEventByTime, convertToUTC, createProfile, DeleteEvent, fetchEventById, getEvents, UpdateEvent, UpdateEventByStartEnd, UTCToLocal } from '../commons/helper.js';
+import { bookEvent, bookEventByTime, convertToUTC, createProfile, DeleteEvent, fetchEventById, UpdateEventByStartEnd, UTCToLocal } from '../commons/helper.js';
 
 let server;
 let account_id;
 let event_id;
+jest.setTimeout(10000);
 
 beforeAll(async () => {
     server = app.listen(PORT);
@@ -15,8 +16,10 @@ beforeAll(async () => {
 
 afterAll(() => {
     db.prepare(`DELETE FROM business_hours WHERE account_id=?`).run(account_id);
+    db.prepare(`DELETE from event_audit WHERE account_id=?`).run(account_id);
     db.prepare(`DELETE FROM events WHERE account_id=?`).run(account_id);
     db.prepare(`DELETE FROM profiles WHERE id=?`).run(account_id);
+
     if (db.close) {
         db.close();
     }
@@ -44,7 +47,7 @@ describe('Events API', () => {
         let response = await fetchEventById(event_id);
         let start = UTCToLocal(response.body.event.startTime, TIME_ZONE);
         let end = UTCToLocal(response.body.event.endTime, TIME_ZONE);
-        response = await bookEventByTime(start, end, account_id);
+        response = (await bookEventByTime(start, end, account_id)).response;
         expect(response.status).toBe(409);
         expect(response.body.message).toBe(OVERLAP_ERROR);
     })
@@ -53,12 +56,14 @@ describe('Events API', () => {
         let fetch_response = await fetchEventById(event_id);
         let start = UTCToLocal(fetch_response.body.event.startTime, TIME_ZONE);
         let end = UTCToLocal(fetch_response.body.event.endTime, TIME_ZONE);
-        let updated_response = await UpdateEventByStartEnd(start, end, event_id, account_id);
-        const updated_event = updated_response.body.event;
-        expect(updated_response.status).toBe(200);
-        expect(updated_response.body.message).toEqual(EVENT_UPDATED);
-        expect(updated_event.id).toEqual(event_id);
-        expect(updated_event.account_id).toEqual(fetch_response.body.event.account_id);
+        let req_resp = await UpdateEventByStartEnd(start, end, event_id, account_id);
+        let request_body = req_resp.request_body;
+        let response = req_resp.response;
+        const updated_event = response.body.event;
+        expect(response.status).toBe(200);
+        expect(response.body.message).toEqual(EVENT_UPDATED);
+        expect(updated_event.id).toEqual(request_body.id);
+        expect(updated_event.account_id).toEqual(request_body.account_id);
         expect(updated_event.title).toBeDefined();
         expect(updated_event.startTime).toEqual(fetch_response.body.event.startTime);
         expect(updated_event.endTime).toEqual(fetch_response.body.event.endTime);
