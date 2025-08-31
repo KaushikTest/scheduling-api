@@ -1,7 +1,7 @@
-import express, { json } from 'express';
-import db from '../base/database.js';
+import express from 'express';
 import { DateTime } from 'luxon';
-import { MISSING_FIELD, INVALID_DATE, TIME_ERROR, OVERLAP_ERROR, EVENT_BOOKED, ID_ERROR, EVENT_ERROR, EVENT_BLOCKED, EVENT_RELEASED, EVENT_UPDATED, EVENT_DELETED } from '../commons/constants.js';
+import db from '../base/database.js';
+import { EVENT_BOOKED, EVENT_DELETED, EVENT_ERROR, EVENT_RELEASED, EVENT_UPDATED, ID_ERROR, INVALID_DATE, MISSING_FIELD, OVERLAP_ERROR, TIME_ERROR } from '../commons/constants.js';
 
 const router = express.Router();
 
@@ -165,15 +165,13 @@ router.put('/:id', (req, res) => {
 
 });
 
-
 router.delete('/:id', (req, res) => {
     const { id } = req.params;
     const existing = db.prepare(`SELECT * FROM events WHERE id=?`).get(id);
-    if (!existing) {
+    if (!existing || existing.status == 'cancelled') {
         return res.status(404).json({ message: EVENT_ERROR });
     }
-
-    db.prepare('DELETE FROM events WHERE id=?').run(id);
+    db.prepare('UPDATE events SET status=? ').run('cancelled');
     res.json({ message: EVENT_DELETED });
 });
 
