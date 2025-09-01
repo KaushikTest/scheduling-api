@@ -1,7 +1,6 @@
-import { EVENT_DELETED, EVENT_ERROR, OVERLAP_ERROR } from '../constants.js';
 import db from '../base/database.js';
-import { bookEvent, bookEventByTime, createProfile, DeleteEvent, fetchHours, fetchProfile, getEvents, UpdateEvent } from '../commons/helper.js';
 import app, { PORT } from '../base/index.js';
+import { createProfile, fetchHours } from '../commons/helper.js';
 
 
 let server;
@@ -22,8 +21,8 @@ afterAll(() => {
 describe('Business Hours API', () => {
 
     it('Fetch Business hours', async () => {
-        const profile = await createProfile();
-        account_id = profile.body.profile.id;
+        const request_response = await createProfile();
+        account_id = request_response.res.body.profile.id;
         const business_hours = await fetchHours(account_id);
         expect(business_hours.body.account_id).toEqual(account_id);
         expect(business_hours.body.hours).toBeDefined();
