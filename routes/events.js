@@ -156,11 +156,32 @@ router.put('/:id', (req, res) => {
     if (overlapping) {
         return res.status(409).json({ message: OVERLAP_ERROR });
     }
+    const log_id = crypto.randomUUID();
+
+    const logEventAudit = db.prepare(`
+        INSERT INTO event_audit (id,event_id,account_id,action,timestamp,type,details,performed_by) VALUES (?,?,?,?,?,?,?,?)`);
 
     db.prepare(`UPDATE events SET title=?, startTime=?, endTime=?, status=?
         WHERE id=?`).run(title, startUTC, endUTC, 'updated', id);
 
+    const details = {
+        old: {
+            title: existing.title,
+            startTime: existing.startTime,
+            endTime: existing.endTime
+        },
+        new: {
+            title: title,
+            startTime: startUTC,
+            endTime: endUTC,
+        }
+    }
+    logEventAudit.run(log_id, id, existing.account_id, 'updated', new Date().toISOString(), 'EVENT', JSON.stringify(details), 'system'
+    );
+
     const updated = db.prepare(`SELECT * FROM events WHERE id=?`).get(id);
+
+
     res.json({ message: EVENT_UPDATED, event: updated });
 
 });
@@ -171,7 +192,25 @@ router.delete('/:id', (req, res) => {
     if (!existing || existing.status == 'cancelled') {
         return res.status(404).json({ message: EVENT_ERROR });
     }
+    const log_id = crypto.randomUUID();
+
+    const logEventAudit = db.prepare(`
+        INSERT INTO event_audit (id,event_id,account_id,action,timestamp,type,details,performed_by) VALUES (?,?,?,?,?,?,?,?)`);
+    const details = {
+        old: {
+            title: existing.title,
+            startTime: existing.startTime,
+            endTime: existing.endTime
+        },
+        new: {
+            title: existing.title,
+            startTime: existing.startTime,
+            endTime: existing.endTime
+        }
+    }
     db.prepare('UPDATE events SET status=? ').run('cancelled');
+    logEventAudit.run(log_id, id, existing.account_id, 'cancelled', new Date().toISOString(), 'EVENT', JSON.stringify(details), 'system'
+    );
     res.json({ message: EVENT_DELETED });
 });
 
