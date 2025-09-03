@@ -14,7 +14,7 @@ db.prepare(`
     title TEXT,
     startTime TEXT,
     endTime TEXT,
-    type TEXT,
+    type TEXT CHECK(type IN ('EVENT','BLOCKER','SESSION')) NOT NULL,
     status TEXT,
     FOREIGN KEY(account_id) REFERENCES profiles(id)
   )
@@ -24,6 +24,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS business_hours(
   id TEXT PRIMARY KEY,
   account_id TEXT,
   day_of_week INTEGER NOT NULL CHECK(day_of_week BETWEEN 0 AND 6),
+  type TEXT CHECK (type IN ('ACCOUNT','STAFF')) NOT NULL,
   open_time TEXT NOT NULL,
   close_time TEXT NOT NULL,
   FOREIGN KEY(account_id) REFERENCES profiles(id))`
@@ -36,6 +37,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS profiles(id TEXT PRIMARY KEY,
   location TEXT,
   email TEXT,
   phone TEXT,
+  type TEXT CHECK (type IN ('ACCOUNT','STAFF')) NOT NULL,
   created_at TEXT DEFAULT (DATETIME('now')),
   updated_at TEXT DEFAULT (DATETIME('now')))`
 ).run();
