@@ -1,6 +1,5 @@
-import express, { json } from 'express';
+import express from 'express';
 import db from '../base/database.js';
-import { DateTime } from 'luxon';
 
 
 const hoursRouter = express.Router();
@@ -27,13 +26,19 @@ hoursRouter.put('/:account_id', (req, res) => {
         return res.status(400).json({ message: 'business_hours must be an array' });
     }
 
+    // business_hours.type is NOT NULL and mirrors the owning profile's type.
+    const profile = db.prepare('SELECT type FROM profiles WHERE id=?').get(account_id);
+    if (!profile) {
+        return res.status(404).json({ message: 'Account not found' });
+    }
+
     const deleteStmt = db.prepare(`DELETE FROM business_hours WHERE account_id=?`);
-    const insertStmt = db.prepare(`INSERT INTO business_hours (id,account_id,day_of_week,open_time,close_time) VALUES (?,?,?,?,?)`);
+    const insertStmt = db.prepare(`INSERT INTO business_hours (id,account_id,day_of_week,type,open_time,close_time) VALUES (?,?,?,?,?,?)`);
     const transaction = db.transaction((hours) => {
         deleteStmt.run(account_id);
         for (const h of hours) {
             const id = crypto.randomUUID();
-            insertStmt.run(id, account_id, h.day_of_week, h.open_time, h.close_time)
+            insertStmt.run(id, account_id, h.day_of_week, profile.type, h.open_time, h.close_time)
         }
     });
 
@@ -55,17 +60,22 @@ hoursRouter.put('/:account_id/:day_of_week', (req, res) => {
         return res.status(400).json({ message: 'business_hours must be an array' });
     }
 
+    const profile = db.prepare('SELECT type FROM profiles WHERE id=?').get(account_id);
+    if (!profile) {
+        return res.status(404).json({ message: 'Account not found' });
+    }
+
     const deleteStmt = db.prepare('DELETE FROM business_hours WHERE account_id = ? AND day_of_week = ?');
     const insertStmt = db.prepare(`
-    INSERT INTO business_hours (id,account_id, day_of_week, open_time, close_time)
-    VALUES (?,?, ?, ?, ?)
+    INSERT INTO business_hours (id,account_id, day_of_week, type, open_time, close_time)
+    VALUES (?,?, ?, ?, ?, ?)
   `);
 
     const transaction = db.transaction((hours) => {
         deleteStmt.run(account_id, day_of_week);
         for (const interval of hours) {
             const id = crypto.randomUUID();
-            insertStmt.run(id, account_id, day_of_week, interval.open_time, interval.close_time);
+            insertStmt.run(id, account_id, day_of_week, profile.type, interval.open_time, interval.close_time);
         }
     });
 
