@@ -50,8 +50,9 @@ router.post('/book', (req, res) => {
         return res.status(400).json({ message: TIME_ERROR })
     }
 
-    const overlapping = db.prepare(`SELECT * FROM events WHERE 
-    status!='released' AND NOT (JULIANDAY(?) >= JULIANDAY(endTime) OR JULIANDAY(?) <= JULIANDAY(startTime))`).get(startUTC, endUTC);
+    const overlapping = db.prepare(`SELECT * FROM events WHERE
+    account_id=? AND status NOT IN ('released','cancelled')
+    AND NOT (JULIANDAY(?) >= JULIANDAY(endTime) OR JULIANDAY(?) <= JULIANDAY(startTime))`).get(account_id, startUTC, endUTC);
 
     if (overlapping) {
         return res.status(409).json({ message: OVERLAP_ERROR });
@@ -96,8 +97,9 @@ router.post('/block', (req, res) => {
         return res.status(400).json({ message: TIME_ERROR })
     }
 
-    const overlapping = db.prepare(`SELECT * FROM events WHERE 
-    status!='released' AND NOT (JULIANDAY(?) >= JULIANDAY(endTime) OR JULIANDAY(?) <= JULIANDAY(startTime))`).get(startUTC, endUTC);
+    const overlapping = db.prepare(`SELECT * FROM events WHERE
+    account_id=? AND status NOT IN ('released','cancelled')
+    AND NOT (JULIANDAY(?) >= JULIANDAY(endTime) OR JULIANDAY(?) <= JULIANDAY(startTime))`).get(account_id, startUTC, endUTC);
 
     if (overlapping) {
         return res.status(409).json({ message: OVERLAP_ERROR });
@@ -148,10 +150,11 @@ router.put('/:id', (req, res) => {
         return res.status(400).json({ message: TIME_ERROR });
     }
 
-    const overlapping = db.prepare(`SELECT * FROM events WHERE status!='released'
+    const overlapping = db.prepare(`SELECT * FROM events
+        WHERE account_id=? AND status NOT IN ('released','cancelled')
         AND id!=?
         AND NOT(JULIANDAY(?) >= JULIANDAY(endTime)
-          OR JULIANDAY(?) <= JULIANDAY(startTime))`).get(id, startUTC, endUTC);
+          OR JULIANDAY(?) <= JULIANDAY(startTime))`).get(existing.account_id, id, startUTC, endUTC);
 
     if (overlapping) {
         return res.status(409).json({ message: OVERLAP_ERROR });
