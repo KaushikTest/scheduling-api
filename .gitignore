@@ -1,2 +1,7 @@
 node_modules
 eventsdb.sqlite
+
+# Local scratch: date-format experiments and the pre-refactor monolithic app
+test.js
+index_test.js
+jsconfig.json

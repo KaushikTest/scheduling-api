@@ -1,6 +1,6 @@
-import express, { json } from 'express';
-import db from '../base/database.js';
+import express from 'express';
 import { DateTime } from 'luxon';
+import db from '../base/database.js';
 import { TIME_FORMAT } from '../commons/constants.js';
 import { generateSlots, isOverlapping } from '../commons/helper.js';
 

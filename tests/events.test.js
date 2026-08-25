@@ -1,15 +1,12 @@
 import db from '../base/database.js';
-import app, { PORT } from '../base/index.js';
 import { EVENT_BOOKED, EVENT_DELETED, EVENT_ERROR, EVENT_UPDATED, OVERLAP_ERROR, TIME_ZONE } from '../commons/constants.js';
 import { bookEvent, bookEventByTime, convertToUTC, createProfile, DeleteEvent, fetchEventById, UpdateEventByStartEnd, UTCToLocal } from '../commons/helper.js';
 
-let server;
 let account_id;
 let event_id;
 jest.setTimeout(10000);
 
 beforeAll(async () => {
-    server = app.listen(PORT);
     const request_response = await createProfile();
     account_id = request_response.res.body.profile.id;
 })
@@ -23,7 +20,6 @@ afterAll(() => {
     if (db.close) {
         db.close();
     }
-    server.close();
 });
 
 describe('Events API', () => {

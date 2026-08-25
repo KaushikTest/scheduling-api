@@ -14,11 +14,13 @@ trackRouter.get('/events/:event_id/audit', (req, res) => {
         event_id,
         audit_log: rows.map(row => ({
             action: row.action,
-            timestampt: row.timestamp,
+            timestamp: row.timestamp,
             details: row.details ? JSON.parse(row.details) : null,
             type: row.type,
             performed_by: row.performed_by
 
         }))
-    })
-})
+    });
+});
+
+export default trackRouter; 

@@ -13,3 +13,4 @@ export const EVENT_UPDATED = 'Event updated successfully.';
 export const EVENT_DELETED = 'Event deleted successfully.';
 export const PROFILE_CREATED = 'Profile created successfully.';
 export const PROFILE_FETCHED = 'Profile fetched successfully.';
+export const TIME_ZONE = 'Asia/Kolkata';        

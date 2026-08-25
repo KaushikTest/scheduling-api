@@ -13,9 +13,9 @@ profileRouter.post('/create', (req, res) => {
     const profile_staff_id = crypto.randomUUID();
     const now = new Date().toISOString();
     const insert = db.prepare(`INSERT INTO profiles
-    (id,company_name,timezone,location,email,phone,type,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)`)
-    insert.run(profile_id, company_name, timezone, location, email, phone, 'ACCOUNT', created_at || now, updated_at || now);
-    insert.run(profile_staff_id, company_name, timezone, location, email, phone, 'STAFF', created_at || now, updated_at || now);
+    (id,merchant_key,company_name,timezone,location,email,phone,type,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)`)
+    insert.run(profile_id, profile_id, company_name, timezone, location, email, phone, 'ACCOUNT', created_at || now, updated_at || now);
+    insert.run(profile_staff_id, profile_id, company_name, timezone, location, email, phone, 'STAFF', created_at || now, updated_at || now);
 
     const defaultHours = [{ day_of_week: 1, open_time: "09:00", close_time: "17:00" },
     { day_of_week: 2, open_time: "09:00", close_time: "17:00" },
@@ -42,6 +42,13 @@ profileRouter.get('/:id', (req, res) => {
     const profile = db.prepare(`SELECT * FROM profiles WHERE id=?`).get(id);
     return res.status(200).json({ message: PROFILE_FETCHED, profile });
 });
+
+profileRouter.get('/:id/staff', (req, res) => {
+    const { id } = req.params;
+    const profile = db.prepare(`SELECT * FROM profiles WHERE merchant_key=? AND type=? `).all(id, 'STAFF');
+    return res.status(200).json({ message: PROFILE_FETCHED, profile })
+
+})
 
 profileRouter.put('/:id', (req, res) => {
     const { id } = req.params;

@@ -32,6 +32,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS business_hours(
 
 
 db.prepare(`CREATE TABLE IF NOT EXISTS profiles(id TEXT PRIMARY KEY,
+  merchant_key TEXT NOT NULL,
   company_name TEXT NOT NULL,
   timezone TEXT NOT NULL,
   location TEXT,

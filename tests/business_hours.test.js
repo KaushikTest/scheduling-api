@@ -1,13 +1,8 @@
 import db from '../base/database.js';
-import app, { PORT } from '../base/index.js';
 import { createProfile, fetchHours } from '../commons/helper.js';
 
 
-let server;
 let account_id;
-beforeAll(() => {
-    server = app.listen(PORT);
-})
 
 afterAll(() => {
     db.prepare(`DELETE FROM business_hours WHERE account_id=?`).run(account_id);
@@ -15,7 +10,6 @@ afterAll(() => {
     if (db.close) {
         db.close();
     }
-    server.close();
 });
 
 describe('Business Hours API', () => {

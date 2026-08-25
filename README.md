@@ -1,28 +1,58 @@
 # Scheduling API - Node.js & SQLite
 
-A simple, persistent event scheduling backend built with Express.js and SQLite.
-Supports creating, listing, updating, deleting, blocking, and releasing events, with overlap prevention and proper UTC datetime handling.
+A persistent event scheduling backend built with Express.js and SQLite, covering
+events (book/update/delete/block/release with overlap prevention), business hours,
+available-slot calculation, multi-tenant profiles, and an event audit trail — all
+with proper UTC datetime handling.
+
+Built as much for the **test suite** as for the API: Jest + Supertest integration
+tests run against a real SQLite database and a live Express app, exercising the
+booking rules end-to-end rather than mocking them.
 
 ## Tech Stack
-Node.js (Express)
-SQLite (via better-sqlite3)
+Node.js (Express 5)
+SQLite (via better-sqlite3) — raw SQL schema, foreign keys, parameterised queries
 Luxon (for robust date-time parsing)
-API documentation: Markdown in this README
+Jest + Supertest (integration testing)
+GitHub Actions (CI on every push and PR)
 
 ## Getting Started
 
 ### Clone the repository:
-`git clone <your-repo-url>`  
-`cd <your-project-folder>`
+`git clone https://github.com/KaushikTest/scheduling-api.git`  
+`cd scheduling-api`
 
 ### Install dependencies:
 `npm install`
 
 ### Start the server:
-`node index.js` 
+`node base/index.js`
 
 The server will start at http://localhost:3000.  
 The SQLite database file (eventsdb.sqlite) will be automatically created in your project folder.
+
+## Testing
+
+```
+npm test
+```
+
+Runs the Jest + Supertest integration suite (3 suites, 9 tests). These are true
+integration tests — no mocks. Each suite drives the real Express app via Supertest,
+writes to a real SQLite database, asserts on the response, and cleans up its own
+rows in `afterAll`. Coverage includes:
+
+- **Events** — booking, double-booking rejection (409 on overlap), update, delete,
+  and deleting an already-deleted event (404)
+- **Profiles** — creation (which also seeds default business hours) and retrieval
+- **Business hours** — default weekday 09:00–17:00 windows seeded on profile
+  creation, and empty weekends
+
+Test data is generated with `@faker-js/faker` and request payloads are assembled
+through small builder classes (`builders/`), keeping the specs readable and the
+setup reusable.
+
+CI runs the same suite on every push and pull request.
 
 ## API Endpoints
 ### Health Check
@@ -176,13 +206,23 @@ All date times in API requests and responses must be UTC ISO 8601 format with Z,
 
 Overlap checking and scheduling logic are based on these UTC timestamps.
 
+## Other Endpoints
+
+Beyond the events API documented above, the service also exposes:
+
+- `POST /profiles/create`, `GET /profiles/:id`, `GET /profiles/:id/staff`,
+  `PUT /profiles/:id` — multi-tenant account and staff profiles
+- `GET /hours/:account_id`, `PUT /hours/:account_id`,
+  `PUT /hours/:account_id/:day_of_week` — business hours per account
+- `GET /slots` — available slot calculation, derived from business hours minus
+  booked events
+- `GET /track/events/:event_id/audit` — audit log for an event
+
 ## Roadmap / Next Features
-> Business hours API (open/close times)  
-> Available slot calculation  
 > Blackout/off-hour blocks  
 > Pagination and search  
 > Authentication/authorization  
-> Test automation with Jest & Supertest  
+> Negative-path test coverage for profiles and business hours  
 
 ## License
 [MIT](https://github.com/KaushikTest/scheduling-api?tab=MIT-1-ov-file#readme)
