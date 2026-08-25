@@ -88,6 +88,12 @@ export async function fetchHours(account_id) {
     return res;
 }
 
+export async function putHours(account_id, day_of_week, business_hours) {
+    return await request(app)
+        .put(`/hours/${account_id}/${day_of_week}`)
+        .send({ business_hours });
+}
+
 function createProfileRequest() {
     return new ProfileBuilder().setCompanyName(fakerEN_IN.company.name())
         .setTimezone(fakerEN_IN.location.timeZone()).setLocation(fakerEN_IN.location.streetAddress())
@@ -126,4 +132,40 @@ export function UTCToLocal(time, timezone) {
 export async function fetchEventById(id) {
     let response = await request(app).get(`/events/${id}`);
     return response;
+}
+
+export async function fetchEventsByDate(account_id, date) {
+    return await request(app).get('/events').query({ account_id, date });
+}
+
+export async function blockEvent(start, end, account_id) {
+    const request_body = createEventRequestByTime(start, end, account_id);
+    const response = await request(app).post('/events/block').send(request_body);
+    return { request_body, response };
+}
+
+export async function releaseEvent(id) {
+    return await request(app).post('/events/release').send({ id });
+}
+
+export async function fetchSlots(account_id, date, slot_size_minutes) {
+    return await request(app).get('/slots').query({ account_id, date, slot_size_minutes });
+}
+
+export async function fetchAudit(event_id) {
+    return await request(app).get(`/track/events/${event_id}/audit`);
+}
+
+// Raw senders for negative cases — bypass the builders so a test can post a
+// deliberately malformed or incomplete body.
+export async function postRaw(path, body) {
+    return await request(app).post(path).send(body);
+}
+
+export async function putRaw(path, body) {
+    return await request(app).put(path).send(body);
+}
+
+export async function getRaw(path, query = {}) {
+    return await request(app).get(path).query(query);
 }
