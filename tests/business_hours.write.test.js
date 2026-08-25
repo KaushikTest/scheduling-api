@@ -54,6 +54,18 @@ describe('PUT /hours/:account_id/:day_of_week', () => {
         ]);
     });
 
+    // day_of_week is 1-7 (Luxon's convention). The schema originally capped it
+    // at 6, which made Sunday impossible to store.
+    it('accepts Sunday (day 7)', async () => {
+        const res = await putHours(account_id, 7, [
+            { open_time: '10:00', close_time: '14:00' },
+        ]);
+        expect(res.status).toBe(200);
+
+        const hours = (await fetchHours(account_id)).body.hours;
+        expect(hours[7]).toEqual([{ open: '10:00', close: '14:00' }]);
+    });
+
     it('clears a day when given an empty array', async () => {
         const res = await putHours(account_id, 5, []);
         expect(res.status).toBe(200);

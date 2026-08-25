@@ -23,7 +23,9 @@ db.prepare(`
 db.prepare(`CREATE TABLE IF NOT EXISTS business_hours(
   id TEXT PRIMARY KEY,
   account_id TEXT,
-  day_of_week INTEGER NOT NULL CHECK(day_of_week BETWEEN 0 AND 6),
+  -- 1 = Monday ... 7 = Sunday, matching Luxon's DateTime.weekday, which is what
+  -- the slots and hours routes group by. The old 0-6 range made Sunday unstorable.
+  day_of_week INTEGER NOT NULL CHECK(day_of_week BETWEEN 1 AND 7),
   type TEXT CHECK (type IN ('ACCOUNT','STAFF')) NOT NULL,
   open_time TEXT NOT NULL,
   close_time TEXT NOT NULL,
