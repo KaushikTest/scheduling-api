@@ -55,7 +55,7 @@ rows in `afterAll`. Coverage:
   days, slots disappearing once an event occupies them, and param validation
 - **Audit trail** — created/updated/cancelled entries, and the old-vs-new value
   capture on an update
-- **Isolation** — regression tests for the two bugs below
+- **Isolation** — regression tests for the first two bugs below
 
 Test data is generated with `@faker-js/faker` and request payloads are assembled
 through small builder classes (`builders/`), keeping the specs readable and the
@@ -232,7 +232,8 @@ rendered back in the account's own timezone.
 > Blackout/off-hour blocks  
 > Pagination and search  
 > Authentication/authorization  
-> Negative-path test coverage for profiles and business hours  
+> Negative-path test coverage for profiles  
+> Load testing with k6  
 
 ## License
 [MIT](https://github.com/KaushikTest/scheduling-api?tab=MIT-1-ov-file#readme)
