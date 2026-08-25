@@ -208,7 +208,7 @@ router.delete('/:id', (req, res) => {
             endTime: existing.endTime
         }
     }
-    db.prepare('UPDATE events SET status=? ').run('cancelled');
+    db.prepare('UPDATE events SET status=? WHERE id=?').run('cancelled', id);
     logEventAudit.run(log_id, id, existing.account_id, 'cancelled', new Date().toISOString(), 'EVENT', JSON.stringify(details), 'system'
     );
     res.json({ message: EVENT_DELETED });
