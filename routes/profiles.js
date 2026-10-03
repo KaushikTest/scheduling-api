@@ -1,7 +1,7 @@
 import express, { json } from 'express';
 import db from '../base/database.js';
 import { DateTime } from 'luxon';
-import { PROFILE_CREATED, PROFILE_FETCHED } from '../commons/constants.js';
+import { MISSING_FIELD, PROFILE_CREATED, PROFILE_FETCHED, PROFILE_NOT_FOUND } from '../commons/constants.js';
 
 const profileRouter = express.Router();
 
@@ -54,6 +54,27 @@ profileRouter.put('/:id', (req, res) => {
     const { id } = req.params;
     const now = new Date().toISOString();
     const { company_name, timezone, location, email, phone, updated_at } = req.body;
+
+    // Existence first. Without it the UPDATE matched zero rows and the handler
+    // still answered 200 PROFILE_UPDATED, so a caller could not tell a real
+    // update from a mistyped id.
+    const existing = db.prepare(`SELECT id FROM profiles WHERE id=?`).get(id);
+    if (!existing) {
+        return res.status(404).json({ message: PROFILE_NOT_FOUND });
+    }
+
+    // Every column is bound unconditionally, so an omitted field arrived as
+    // undefined and tripped a NOT NULL constraint -- which escaped as a 500
+    // carrying an HTML stack trace and the server's filesystem path. This is a
+    // full replace, so say so with a 400 rather than leaking the error.
+    const missing = { company_name, timezone, location, email, phone };
+    if (Object.values(missing).some(v => v === undefined || v === null)) {
+        return res.status(400).json({
+            message: MISSING_FIELD,
+            required: Object.keys(missing),
+        });
+    }
+
     db.prepare(`UPDATE profiles SET company_name=?,timezone=?,location=?,email=?,phone=?,updated_at=? WHERE id=?`).run(company_name, timezone, location, email, phone, updated_at || now, id)
     const updated_profile = db.prepare(`SELECT * FROM profiles WHERE id=?`).get(id);
     res.json({ message: 'PROFILE_UPDATED', updated_profile })

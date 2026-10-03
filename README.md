@@ -38,7 +38,7 @@ The SQLite database file (eventsdb.sqlite) will be automatically created in your
 npm test
 ```
 
-Runs the Jest + Supertest integration suite (8 suites, 53 tests). These are true
+Runs the Jest + Supertest integration suite (10 suites, 67 tests, 91% statement / 93% branch coverage on routes). These are true
 integration tests — no mocks. Each suite drives the real Express app via Supertest,
 writes to a real SQLite database, asserts on the response, and cleans up its own
 rows in `afterAll`. Coverage:
@@ -57,6 +57,10 @@ rows in `afterAll`. Coverage:
 - **Audit trail** — created/updated/cancelled entries, and the old-vs-new value
   capture on an update
 - **Isolation** — regression tests for the first two bugs below
+- **Profiles (negative paths)** — unknown-id updates, partial updates, and the
+  staff lookup, including the empty case
+- **Block** — BLOCKER creation, overlap rejection, cross-account isolation, a
+  blocked slot disappearing from `/slots`, and every validation branch
 
 Test data is generated with `@faker-js/faker` and request payloads are assembled
 through small builder classes (`builders/`), keeping the specs readable and the
@@ -66,7 +70,7 @@ CI runs the same suite on every push and pull request.
 
 ### Bugs the tests caught
 
-Four bugs surfaced while widening the suite. The first two were invisible to the
+Six bugs surfaced while widening the suite. The first two were invisible to the
 original tests because those only ever had a single event and a single account in
 play — the bugs only appear once a second one exists. The others were in endpoints
 that had no coverage at all:
@@ -85,8 +89,24 @@ that had no coverage at all:
    `BETWEEN 0 AND 6`, but every route groups by Luxon's `weekday`, which is 1–7.
    Day 7 failed the constraint, so Sunday hours were unsettable.
 
-`tests/isolation.test.js` covers the first two and `tests/business_hours.write.test.js`
-the rest; each fails if the corresponding fix regresses.
+5. **`PUT /profiles/:id` claimed success for profiles that did not exist.** There
+   was no existence check, so `UPDATE ... WHERE id=?` matched zero rows and the
+   handler still returned `200 PROFILE_UPDATED`. A caller could not distinguish a
+   real update from a mistyped id.
+6. **A partial profile update returned a 500 with an HTML stack trace.** Every
+   column was bound unconditionally, so an omitted field arrived as `undefined`
+   and tripped `NOT NULL constraint failed`. The raw `SqliteError` escaped to the
+   client complete with the server's filesystem path. Now a `400` with a JSON
+   body naming the required fields.
+
+`tests/isolation.test.js` covers the first two, `tests/business_hours.write.test.js`
+the next two, and `tests/profiles.negative.test.js` the last two; each fails if the
+corresponding fix regresses.
+
+`POST /events/block` also had no coverage. `tests/events.block.test.js` closes
+that — it found no bugs, but the endpoint is a near-copy of `/events/book`, which
+is exactly the shape of code where a fix applied to one copy silently misses the
+other.
 
 ## Performance
 
@@ -261,7 +281,6 @@ rendered back in the account's own timezone.
 > Blackout/off-hour blocks  
 > Pagination and search  
 > Authentication/authorization  
-> Negative-path test coverage for profiles  
 > Hoist the remaining 38 per-request `db.prepare()` calls on the other routes  
 > Re-run the load profile with a seeded event volume, to exercise the overlap check  
 
