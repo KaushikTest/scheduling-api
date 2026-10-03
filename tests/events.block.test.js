@@ -59,14 +59,23 @@ describe('POST /events/block', () => {
         expect(res.status).toBe(201);
     });
 
-    it('a block makes the slot disappear from available slots', async () => {
-        const before = await request(app)
-            .get(`/slots?account_id=${account_b}&date=${DAY}&slot_size_minutes=60`);
-        const taken = before.body.available_slots.length;
-        await block(account_b, t(11), t(12));
-        const after = await request(app)
-            .get(`/slots?account_id=${account_b}&date=${DAY}&slot_size_minutes=60`);
-        expect(after.body.available_slots.length).toBeLessThan(taken);
+    // Blocks the slot the API itself offers, rather than a hardcoded UTC hour.
+    // createProfile() assigns a random timezone via faker and /slots renders in
+    // that timezone, so a fixed 11:00Z fell outside business hours whenever the
+    // roll went the wrong way -- the test passed alone and failed in a full run.
+    it('a block makes that slot disappear from available slots', async () => {
+        const url = `/slots?account_id=${account_b}&date=${DAY}&slot_size_minutes=60`;
+        const before = await request(app).get(url);
+        const slots = before.body.available_slots;
+        expect(slots.length).toBeGreaterThan(0);
+
+        const target = slots[0];
+        const res = await block(account_b, target.start, target.end);
+        expect(res.status).toBe(201);
+
+        const after = await request(app).get(url);
+        expect(after.body.available_slots.length).toBe(slots.length - 1);
+        expect(after.body.available_slots.some(s => s.start === target.start)).toBe(false);
     });
 
     it.each([

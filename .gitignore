@@ -5,3 +5,5 @@ eventsdb.sqlite
 test.js
 index_test.js
 jsconfig.json
+# Jest coverage output — generated, regenerate with: npx jest --coverage
+coverage/
