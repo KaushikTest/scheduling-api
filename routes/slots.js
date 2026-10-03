@@ -6,6 +6,22 @@ import { generateSlots, isOverlapping } from '../commons/helper.js';
 
 const slotsRouter = express.Router();
 
+// Prepared ONCE at module load, not per request. better-sqlite3 compiles the
+// SQL inside prepare(); calling it in the handler re-compiled all three
+// statements on every hit, which is the single biggest cost on this route.
+const selectProfileTz = db.prepare('SELECT timezone FROM profiles WHERE id = ?');
+const selectBusinessHours = db.prepare(`
+    SELECT open_time, close_time FROM business_hours
+    WHERE account_id = ? AND day_of_week = ? ORDER BY open_time
+  `);
+const selectDayEvents = db.prepare(`
+    SELECT startTime, endTime FROM events
+    WHERE account_id = ?
+      AND startTime < ?
+      AND endTime > ?
+      AND status != 'released'
+  `);
+
 slotsRouter.get('/', (req, res) => {
     const { account_id, date, slot_size_minutes } = req.query;
 
@@ -19,7 +35,7 @@ slotsRouter.get('/', (req, res) => {
     }
 
 
-    const profile = db.prepare('SELECT timezone FROM profiles WHERE id = ?').get(account_id);
+    const profile = selectProfileTz.get(account_id);
     if (!profile) {
         return res.status(404).json({ message: 'Account not found' });
     }
@@ -30,10 +46,7 @@ slotsRouter.get('/', (req, res) => {
     const dayOfWeek = dayDate.weekday;
 
 
-    const businessHoursRows = db.prepare(`
-    SELECT open_time, close_time FROM business_hours 
-    WHERE account_id = ? AND day_of_week = ? ORDER BY open_time
-  `).all(account_id, dayOfWeek);
+    const businessHoursRows = selectBusinessHours.all(account_id, dayOfWeek);
 
     if (!businessHoursRows.length) {
         return res.json({ account_id, date, available_slots: [] });
@@ -50,13 +63,7 @@ slotsRouter.get('/', (req, res) => {
     const dayStartUTC = dayDate.startOf('day').toUTC().toISO();
     const dayEndUTC = dayDate.endOf('day').toUTC().toISO();
 
-    const eventsRows = db.prepare(`
-    SELECT startTime, endTime FROM events 
-    WHERE account_id = ?
-      AND startTime < ?
-      AND endTime > ?
-      AND status != 'released'
-  `).all(account_id, dayEndUTC, dayStartUTC);
+    const eventsRows = selectDayEvents.all(account_id, dayEndUTC, dayStartUTC);
 
 
     const unavailableIntervals = eventsRows.map(({ startTime, endTime }) => {

@@ -54,12 +54,15 @@ export function generateSlots(start, end, slotSizeMinutes) {
     const slots = [];
     let slotStart = start;
 
-    while (slotStart.plus({ minutes: slotSizeMinutes }) <= end) {
-        slots.push({
-            start: slotStart,
-            end: slotStart.plus({ minutes: slotSizeMinutes })
-        });
-        slotStart = slotStart.plus({ minutes: slotSizeMinutes });
+    // One .plus() per slot instead of three. Luxon builds a fresh immutable
+    // DateTime on every call, so computing the same boundary three times was
+    // two thirds wasted work in the hottest loop on the route.
+    const step = { minutes: slotSizeMinutes };
+    let slotEnd = slotStart.plus(step);
+    while (slotEnd <= end) {
+        slots.push({ start: slotStart, end: slotEnd });
+        slotStart = slotEnd;
+        slotEnd = slotStart.plus(step);
     }
 
     return slots;
