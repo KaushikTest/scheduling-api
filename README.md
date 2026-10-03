@@ -14,6 +14,7 @@ Node.js (Express 5)
 SQLite (via better-sqlite3) — raw SQL schema, foreign keys, parameterised queries
 Luxon (for robust date-time parsing)
 Jest + Supertest (integration testing)
+k6 (load testing)
 GitHub Actions (CI on every push and PR)
 
 ## Getting Started
@@ -86,6 +87,34 @@ that had no coverage at all:
 
 `tests/isolation.test.js` covers the first two and `tests/business_hours.write.test.js`
 the rest; each fails if the corresponding fix regresses.
+
+## Performance
+
+A k6 ramp (1 → 50 VUs over 40s) against `GET /slots`, the heaviest read path —
+three SQLite queries, slot generation across the business day, then an overlap
+check per slot. Thresholds fail the run rather than just reporting, so it works
+as a CI gate.
+
+The baseline **failed** its 200ms p95 budget and the profiling found two causes:
+
+1. **All three `db.prepare()` calls sat inside the request handler.** `prepare()`
+   is where better-sqlite3 compiles the SQL, so every request recompiled three
+   statements — throwing away the entire point of a prepared statement.
+2. **`generateSlots` called Luxon's `.plus()` three times per slot** — once for
+   the loop condition, once for the slot end, once to advance — recomputing the
+   same boundary each time, on a type that allocates a new object per call.
+
+| metric | before | after | change |
+|---|---|---|---|
+| p95 | 240.49 ms | 145.34 ms | **−39.6%** |
+| median | 108.26 ms | 66.33 ms | −38.7% |
+| throughput | 194.5 req/s | 321.0 req/s | **+65%** |
+
+All 53 tests pass unchanged — a pure optimisation, no behavioural difference.
+
+Method, reproduction steps and the honest limits (single host, zero-event seed
+data, and the 38 un-hoisted `prepare()` calls still on the other routes) are in
+[`perf/README.md`](perf/README.md).
 
 ## API Endpoints
 
@@ -233,7 +262,8 @@ rendered back in the account's own timezone.
 > Pagination and search  
 > Authentication/authorization  
 > Negative-path test coverage for profiles  
-> Load testing with k6  
+> Hoist the remaining 38 per-request `db.prepare()` calls on the other routes  
+> Re-run the load profile with a seeded event volume, to exercise the overlap check  
 
 ## License
 [MIT](https://github.com/KaushikTest/scheduling-api?tab=MIT-1-ov-file#readme)
