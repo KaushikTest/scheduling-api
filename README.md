@@ -9,6 +9,11 @@ Built as much for the **test suite** as for the API: Jest + Supertest integratio
 tests run against a real SQLite database and a live Express app, exercising the
 booking rules end-to-end rather than mocking them.
 
+> **Demo scope:** This API does not authenticate callers. An `account_id` in a
+> request selects a tenant; it is not proof that the caller owns that tenant.
+> Run it locally for testing and do not expose it to untrusted users without
+> authentication, authorization checks, and deployment hardening.
+
 ## Tech Stack
 Node.js (Express 5)
 SQLite (via better-sqlite3) — raw SQL schema, foreign keys, parameterised queries
