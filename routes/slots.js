@@ -19,7 +19,7 @@ const selectDayEvents = db.prepare(`
     WHERE account_id = ?
       AND startTime < ?
       AND endTime > ?
-      AND status != 'released'
+      AND status NOT IN ('released','cancelled')
   `);
 
 slotsRouter.get('/', (req, res) => {

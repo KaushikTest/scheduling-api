@@ -1,5 +1,5 @@
 import db from '../base/database.js';
-import { bookEventByTime, createProfile, fetchSlots, getRaw, putHours } from '../commons/helper.js';
+import { bookEventByTime, createProfile, DeleteEvent, fetchSlots, getRaw, putHours } from '../commons/helper.js';
 
 // The account's timezone drives slot generation, so pin it rather than using
 // whatever faker produced — these assertions are about the boundaries.
@@ -66,6 +66,30 @@ describe('GET /slots', () => {
             before.body.available_slots.length - 1
         );
         expect(after.body.available_slots.map(s => s.start)).not.toContain(occupied.start);
+    });
+
+    it('restores a slot after its event is cancelled', async () => {
+        const date = '2033-04-20'; // A separate Wednesday, with no other bookings.
+        const before = await fetchSlots(account_id, date, 60);
+        expect(before.status).toBe(200);
+        expect(before.body.available_slots).toHaveLength(8);
+        const target = before.body.available_slots[2];
+
+        const booked = await bookEventByTime(target.start, target.end, account_id);
+        expect(booked.response.status).toBe(201);
+
+        const occupied = await fetchSlots(account_id, date, 60);
+        expect(occupied.status).toBe(200);
+        expect(occupied.body.available_slots).toEqual(
+            before.body.available_slots.filter(slot => slot.start !== target.start)
+        );
+
+        const cancelled = await DeleteEvent(booked.response.body.event.id);
+        expect(cancelled.status).toBe(200);
+
+        const after = await fetchSlots(account_id, date, 60);
+        expect(after.status).toBe(200);
+        expect(after.body.available_slots).toEqual(before.body.available_slots);
     });
 
     it('excludes a slot size that is larger than the working day', async () => {
