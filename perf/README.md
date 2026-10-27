@@ -54,8 +54,11 @@ Same pinned account, same ramp profile, before and after:
 | throughput | 194.5 req/s | 321.0 req/s | **+65%** |
 | p95 threshold | ✗ fail | ✓ pass | |
 
-All 53 existing Jest tests still pass, so the change is a pure optimisation with
-no behavioural difference.
+At the optimisation recorded on 2026-10-04 (commit `6e426a4`), all 53 Jest tests
+in the then-current suite passed unchanged. These results describe that historical
+benchmark; the current suite has 68 tests across 10 suites, verified by
+[main-branch CI on 2026-10-26 (UTC)](https://github.com/KaushikTest/scheduling-api/actions/runs/40418827430).
+See [Testing](../README.md#testing) for the current suite context.
 
 ## Honest limits
 
