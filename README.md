@@ -43,8 +43,13 @@ The SQLite database file (eventsdb.sqlite) will be automatically created in your
 npm test
 ```
 
-Runs the Jest + Supertest integration suite (10 suites, 67 tests, 91% statement / 93% branch coverage on routes). These are true
-integration tests — no mocks. Each suite drives the real Express app via Supertest,
+Runs the Jest + Supertest integration suite (10 suites, 68 tests). The current count
+is verified by [the main-branch CI run on 2026-10-26 (UTC)](https://github.com/KaushikTest/scheduling-api/actions/runs/40418827430)
+at commit `90db5b7`, including the cancellation regression from
+[PR #1](https://github.com/KaushikTest/scheduling-api/pull/1). The previously reported
+route coverage was 91% statement / 93% branch; that CI run verifies test counts,
+not coverage percentages. These are true integration tests - no mocks. Each suite
+drives the real Express app via Supertest,
 writes to a real SQLite database, asserts on the response, and cleans up its own
 rows in `afterAll`. Coverage:
 
@@ -58,7 +63,8 @@ rows in `afterAll`. Coverage:
 - **Business hours (write)** — single-day and whole-week replacement, split shifts,
   clearing a day, and the Sunday boundary
 - **Slots** — slot generation across the working day, slot-size arithmetic, closed
-  days, slots disappearing once an event occupies them, and param validation
+  days, slots disappearing once an event occupies them and returning after
+  cancellation, and param validation
 - **Audit trail** — created/updated/cancelled entries, and the old-vs-new value
   capture on an update
 - **Isolation** — regression tests for the first two bugs below
@@ -135,7 +141,9 @@ The baseline **failed** its 200ms p95 budget and the profiling found two causes:
 | median | 108.26 ms | 66.33 ms | −38.7% |
 | throughput | 194.5 req/s | 321.0 req/s | **+65%** |
 
-All 53 tests pass unchanged — a pure optimisation, no behavioural difference.
+At the performance optimisation recorded on 2026-10-04 (commit `6e426a4`), all
+53 tests in the then-current suite passed unchanged. This is the historical
+benchmark context; the current suite has 68 tests across 10 suites (see Testing).
 
 Method, reproduction steps and the honest limits (single host, zero-event seed
 data, and the 38 un-hoisted `prepare()` calls still on the other routes) are in
