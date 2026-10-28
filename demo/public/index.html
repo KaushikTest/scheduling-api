@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>Booking lab · Local QA demo</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
+</head>
+<body>
+    <a class="skip-link" href="#booking">Skip to booking</a>
+    <header class="topbar shell">
+        <a class="brand" href="./" aria-label="Booking lab home"><span class="brand-mark" aria-hidden="true">b.</span>booking<span class="brand-light">lab</span></a>
+        <span class="session-badge"><span aria-hidden="true"></span>Disposable session</span>
+    </header>
+    <main class="shell">
+        <section class="intro" aria-labelledby="page-title">
+            <div>
+                <p class="eyebrow">LOCAL QA DEMO <span aria-hidden="true">/</span> SYNTHETIC DATA</p>
+                <h1 id="page-title">Book a moment.</h1>
+                <p class="intro-copy">Pick a time, make a booking, try a cancellation.<br>Fresh data every time the demo restarts.</p>
+            </div>
+            <div class="account-card">
+                <span class="account-icon" aria-hidden="true">S</span>
+                <div><p class="account-name">Synthetic Booking Demo</p><p class="account-meta">Asia/Kolkata <span aria-hidden="true">·</span> IST (UTC+05:30)</p></div>
+            </div>
+        </section>
+
+        <div id="notice" class="message success" role="status" aria-live="polite" hidden></div>
+        <div id="error" class="message error" role="alert" hidden></div>
+
+        <div class="workspace">
+            <section class="panel booking-panel" id="booking" aria-labelledby="booking-heading">
+                <div class="panel-heading"><div><p class="step-label">01 / FIND YOUR TIME</p><h2 id="booking-heading">Choose a slot</h2></div><span class="small-tag">60 min</span></div>
+                <div class="date-row">
+                    <div class="date-field"><label for="date">Choose date</label><input id="date" type="date" required disabled aria-describedby="date-help"></div>
+                    <button id="refresh" class="button secondary" type="button" disabled>Refresh</button>
+                </div>
+                <p id="date-help" class="helper">Seeded weekdays: 09:00–17:00 IST. Weekends are closed.</p>
+                <div class="presets" aria-label="Example dates"><button id="weekday" type="button" disabled>Seeded Wednesday</button><button id="closed-day" type="button" disabled>Closed Saturday</button></div>
+                <div class="section-line"><h3 id="slots-heading">Available times</h3><span id="slot-count" class="count">—</span></div>
+                <p id="loading" class="loading" role="status">Preparing your local session…</p>
+                <div id="slots-region" aria-busy="true">
+                    <fieldset id="slots" class="slots" aria-labelledby="slots-heading" disabled><legend class="sr-only">Available times, Asia/Kolkata</legend></fieldset>
+                    <div id="slots-empty" class="empty-state" hidden><span class="empty-symbol" aria-hidden="true">○</span><p id="empty-title" class="empty-title"></p><p id="empty-detail"></p></div>
+                </div>
+                <form id="booking-form" class="confirmation" aria-labelledby="confirm-heading">
+                    <p class="step-label">02 / MAKE IT YOURS</p>
+                    <h3 id="confirm-heading">Confirm your booking</h3>
+                    <p id="selection" class="selection">Select an available time above.</p>
+                    <label for="title">Booking title</label><input id="title" name="title" type="text" maxlength="80" required value="Demo appointment" autocomplete="off" disabled>
+                    <button id="confirm" class="button primary" type="submit" disabled>Confirm booking <span aria-hidden="true">↗</span></button>
+                    <p class="helper">Saved only in this temporary local session.</p>
+                </form>
+            </section>
+
+            <section class="panel bookings-panel" aria-labelledby="bookings-heading">
+                <div class="panel-heading"><div><p class="step-label">YOUR DAY AT A GLANCE</p><h2 id="bookings-heading">Active bookings</h2></div><span id="booking-count" class="count">—</span></div>
+                <p id="bookings-date" class="day-caption">Loading selected date…</p>
+                <div id="bookings" aria-busy="true"></div>
+                <div id="bookings-empty" class="empty-state booking-empty" hidden><span class="empty-symbol" aria-hidden="true">↗</span><p class="empty-title">A clear calendar</p><p>No active bookings on this date.</p></div>
+                <div class="session-note"><span class="note-dot" aria-hidden="true"></span><div><strong>A safe space to test.</strong><p>Book, cancel and repeat. This synthetic account and its bookings reset when you restart the demo.</p></div></div>
+            </section>
+        </div>
+        <footer class="footer"><p><strong>QA scope</strong> <span aria-hidden="true">/</span> No sign-in or payments. Business hours guide these slots; the API itself does not enforce hours or past-date restrictions.</p><span>Local only · Asia/Kolkata</span></footer>
+    </main>
+</body>
+</html>

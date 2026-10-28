@@ -3,7 +3,9 @@
  */
 
 import Database from 'better-sqlite3';
-const db = new Database('eventsdb.sqlite');
+// Demo/test launchers supply a disposable absolute path before importing the app.
+// Direct server startup retains the existing local database behaviour.
+const db = new Database(process.env.SCHEDULING_DB_PATH || 'eventsdb.sqlite');
 db.pragma('foreign_keys = ON');
 
 // Initialize events table if it doesn't exist

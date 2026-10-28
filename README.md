@@ -19,6 +19,7 @@ Node.js (Express 5)
 SQLite (via better-sqlite3) — raw SQL schema, foreign keys, parameterised queries
 Luxon (for robust date-time parsing)
 Jest + Supertest (integration testing)
+Playwright + TypeScript (local booking demo browser tests)
 k6 (load testing)
 GitHub Actions (CI on every push and PR)
 
@@ -29,9 +30,83 @@ GitHub Actions (CI on every push and PR)
 `cd scheduling-api`
 
 ### Install dependencies:
-`npm install`
+`npm ci`
 
-### Start the server:
+Use a supported Node.js LTS release (Node 24 was used to verify the demo). On
+Windows PowerShell, use `npm.cmd` if script execution policy blocks `npm.ps1`.
+
+### Disposable booking demo (recommended for demo/test work)
+
+From a clean checkout:
+
+```sh
+npm ci
+npx playwright install chromium
+npm test
+npm run test:demo
+npm run typecheck:e2e
+npm run test:e2e
+npm run demo
+```
+
+`npm run demo` prints one JSON readiness record containing `url`, `uiUrl`, `accountId`,
+`timezone`, `weekday`, `closedDay`, `eventId`, `workspace` and `databasePath`.
+Readiness is reported only after the seeded profile responds over HTTP. Open the
+printed **`uiUrl`** (`http://127.0.0.1:<port>/demo/`) for the booking page. Choose
+a date and an available time, enter a title and confirm. Active bookings have a
+Cancel booking action. The default account is synthetic; the demo has no login,
+payments or notifications. The UI and its synthetic config are mounted only by
+this demo launcher, not by the ordinary API entry point.
+The server binds to **127.0.0.1 only**, with a free OS-selected port by default.
+An optional `PORT` selects a fixed port (PowerShell: `$env:PORT='3100'`); an
+occupied port fails and cleans up instead of connecting to someone else's server.
+
+Every run owns a new directory under the OS temp folder and a fresh SQLite file.
+It overrides inherited database settings, never opens your checkout's
+`eventsdb.sqlite`, and seeds only synthetic data:
+
+- Account `demo-account` and paired staff `demo-staff`, both in **Asia/Kolkata**.
+- Monday-Friday 09:00-17:00 hours; Saturday and Sunday closed.
+- Wednesday **2033-04-06**, with `demo-booking` occupying 11:00-12:00 IST
+  (05:30-06:30 UTC), leaving seven one-hour slots.
+- Saturday **2033-04-09**, a deterministic closed-day example.
+
+For example, append these paths to the printed `url`:
+
+```text
+/profiles/demo-account
+/slots?account_id=demo-account&date=2033-04-06&slot_size_minutes=60
+/slots?account_id=demo-account&date=2033-04-09&slot_size_minutes=60
+/events?account_id=demo-account&date=2033-04-06
+```
+
+Stop with **Ctrl+C** in the same terminal. Normal shutdown closes the HTTP server
+and database before removing that run's owned directory. Restart to reset all
+changes. Concurrent runs have separate ports and data. Force-killing the launcher
+or a machine crash may leave its temp directory behind; the worker exits when
+its parent IPC connection closes. No command scans for or removes other runs.
+
+The Playwright fixtures reuse the same lifecycle directly:
+
+```js
+import { startDemo } from './scripts/demo.js';
+
+const demo = await startDemo(); // ignores ambient PORT; pass { port: 3100 } if needed
+try {
+    // Use demo.url, demo.accountId, demo.weekday and demo.closedDay in tests.
+    const response = await fetch(`${demo.url}/profiles/${demo.accountId}`);
+    console.log(await response.json());
+} finally {
+    await demo.stop(); // await this before test teardown finishes; safe to call twice
+}
+```
+
+The demo supports Asia/Kolkata only: the existing event-list route interprets
+dates in that timezone. It does not promise arbitrary timezone support.
+There are no database reset/debug HTTP endpoints. This local API still has the
+authentication limitations described above.
+
+### Start the server with your ordinary local database:
 `node base/index.js`
 
 The server will start at http://localhost:3000.  
@@ -42,6 +117,54 @@ The SQLite database file (eventsdb.sqlite) will be automatically created in your
 ```
 npm test
 ```
+
+The test launcher runs Jest serially against a new temporary SQLite file, then
+removes that run's directory on completion (including test failures). It overrides
+inherited `SCHEDULING_DB_PATH` settings, so `npm test` does not use your ordinary
+database. Jest options still work, for example `npm test -- --coverage`.
+Use `npm run test:demo` for the separate Node lifecycle checks: readiness, seeded
+weekday/closed-day data, booking/cancellation, concurrent isolation, restart,
+port-conflict failure cleanup, CLI shutdown and existing-file preservation.
+Run these checks plus the browser checks below before reviewing changes. Direct `npx jest` bypasses the
+disposable launcher and uses the ordinary database unless explicitly configured.
+
+### Booking demo browser checks
+
+```sh
+npx playwright install chromium
+npm run typecheck:e2e
+npm run test:e2e
+```
+
+The six TypeScript scenarios live in `e2e/`, separate from Jest. Each test starts
+its own loopback server and disposable SQLite database; there is no external
+base URL, normal app reuse or public database inspection endpoint. Read-only
+database assertions use the owned fixture path and close before teardown.
+
+1. Displayed slots match the real API; a delayed response cannot replace a newly
+   selected date. Also checks a 390px mobile layout for horizontal overflow.
+2. Booking removes the slot and persists across reload. Repeated clicks submit
+   once; date, slot and action controls are disabled during the pending write.
+3. Cancellation restores the slot and retains cancelled status and audit data.
+4. A second real API client occupies a displayed slot; the stale UI receives a
+   409 and refreshes without a duplicate or false success.
+5. A closed day clears the selected slot, shows loading and useful empty states.
+6. One controlled booking API failure shows an error and saves no booking; a
+   deliberate retry succeeds. Core lifecycle calls and database checks are real.
+
+The page aborts superseded reads and checks response versions before rendering.
+It clears selection on date changes/refresh, serializes writes and never retries
+a write automatically. Feedback stays visible while scrolling. A lost write
+response can be ambiguous, so errors ask you to check refreshed bookings before
+retrying. The page filters cancelled/released rows out of active bookings while
+the backend retains those rows for the audit trail.
+
+Playwright keeps traces and screenshots on failure under `test-results/` and
+writes an ignored HTML report to `playwright-report/` (`npx playwright show-report`
+to view it). The first scenario also saves desktop/mobile screenshots. CI runs
+Jest, lifecycle checks, typechecking and Chromium tests, uploading browser failure
+evidence for seven days. CI changes are configured locally; no remote run is
+triggered until the changes are pushed.
 
 Runs the Jest + Supertest integration suite (10 suites, 68 tests). The current count
 is verified by [the main-branch CI run on 2026-10-26 (UTC)](https://github.com/KaushikTest/scheduling-api/actions/runs/40418827430)
