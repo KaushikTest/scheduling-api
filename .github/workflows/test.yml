@@ -19,3 +19,20 @@ jobs:
       run: npm ci
     - name: Run Jest integration tests
       run: npm test
+    - name: Verify disposable demo lifecycle
+      run: npm run test:demo
+    - name: Check browser test types
+      run: npm run typecheck:e2e
+    - name: Install Chromium for Playwright
+      run: npx playwright install --with-deps chromium
+    - name: Verify booking demo in Chromium
+      run: npm run test:e2e
+    - name: Upload browser failure evidence
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: booking-demo-failure-evidence
+        path: |
+          test-results/
+          playwright-report/
+        retention-days: 7

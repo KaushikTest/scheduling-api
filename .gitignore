@@ -7,3 +7,7 @@ index_test.js
 jsconfig.json
 # Jest coverage output — generated, regenerate with: npx jest --coverage
 coverage/
+
+# Local Playwright output (failure traces/screenshots and HTML report)
+test-results/
+playwright-report/
